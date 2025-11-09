@@ -1,26 +1,15 @@
 package tasks
 
 import (
+	"os"
 	"testing"
 )
 
 func TestExtract(t *testing.T) {
-	markdown := `# 2024-11-08
-
-## Doing
-
-- [ ] Review PRs
-  - [x] PR #123
-  - [ ] PR #456
-- [x] Write documentation
-
-## Longer Term
-
-- [x] Completed task
-- [ ] Research new framework
-  - [ ] Read docs
-  - [x] Watch tutorial
-`
+	markdown, err := os.ReadFile("testdata/extract_test.md")
+	if err != nil {
+		t.Fatalf("Failed to read test file: %v", err)
+	}
 
 	doc, err := Extract(markdown)
 	if err != nil {
@@ -62,22 +51,12 @@ func TestExtract(t *testing.T) {
 }
 
 func TestFilterUncompleted(t *testing.T) {
-	markdown := `# 2024-11-08
+	markdown, err := os.ReadFile("testdata/filter_uncompleted_test.md")
+	if err != nil {
+		t.Fatalf("Failed to read test file: %v", err)
+	}
 
-## Doing
-
-- [ ] Review PRs
-  - [x] PR #123
-  - [ ] PR #456
-- [x] Write documentation
-
-## Completed Section
-
-- [x] All done
-- [x] Everything checked
-`
-
-	doc, err := Extract([]byte(markdown))
+	doc, err := Extract(markdown)
 	if err != nil {
 		t.Fatalf("Extract failed: %v", err)
 	}
