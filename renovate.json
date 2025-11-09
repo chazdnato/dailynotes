@@ -3,5 +3,6 @@
   "extends": [
     "gitlab>gitlab-com/gl-infra/common-ci-tasks:renovate-common",
     "gitlab>gitlab-com/gl-infra/common-ci-tasks:renovate-truncated-versions"
-  ]
+  ],
+  "hostRules": []
 }
