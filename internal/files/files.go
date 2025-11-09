@@ -13,10 +13,10 @@ import (
 	"dailynotes/internal/tasks"
 )
 
+var dateFilePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.md$`)
+
 // FindMostRecent finds the most recent YYYY-MM-DD.md file in the given directory
 func FindMostRecent(dir string) (string, error) {
-	pattern := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.md$`)
-
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -30,7 +30,7 @@ func FindMostRecent(dir string) (string, error) {
 
 	var dateFiles []string
 	for _, entry := range entries {
-		if !entry.IsDir() && pattern.MatchString(entry.Name()) {
+		if !entry.IsDir() && dateFilePattern.MatchString(entry.Name()) {
 			dateFiles = append(dateFiles, entry.Name())
 		}
 	}
@@ -90,8 +90,6 @@ type ListInfo struct {
 
 // List returns information about all daily note files in the directory
 func List(dir string) ([]ListInfo, error) {
-	pattern := regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.md$`)
-
 	entries, err := os.ReadDir(dir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -105,7 +103,7 @@ func List(dir string) ([]ListInfo, error) {
 
 	var dateFiles []string
 	for _, entry := range entries {
-		if !entry.IsDir() && pattern.MatchString(entry.Name()) {
+		if !entry.IsDir() && dateFilePattern.MatchString(entry.Name()) {
 			dateFiles = append(dateFiles, entry.Name())
 		}
 	}

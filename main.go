@@ -18,11 +18,11 @@ import (
 // CLI flags
 var (
 	debugFlag    = flag.Bool("debug", false, "Enable debug output")
-	dryRunFlag   = flag.Bool("dry-run", false, "Show what would be created without writing files")
 	dirFlag      = flag.String("dir", ".", "Directory containing daily note files")
-	templateFlag = flag.String("template", "", "Path to template file (uses default if not specified)")
+	dryRunFlag   = flag.Bool("dry-run", false, "Show what would be created without writing files")
 	forceFlag    = flag.Bool("force", false, "Overwrite existing file without prompting")
 	listFlag     = flag.Bool("list", false, "List all daily note files in the directory")
+	templateFlag = flag.String("template", "", "Path to template file (uses default if not specified)")
 )
 
 // promptYesNo asks the user a yes/no question and returns true for yes
@@ -58,7 +58,8 @@ func listDailyNotes() error {
 			marker = "→ "
 		}
 
-		taskStats := "?"
+		var taskStats string
+
 		if info.Total > 0 {
 			taskStats = fmt.Sprintf("%d/%d", info.Completed, info.Total)
 		} else {

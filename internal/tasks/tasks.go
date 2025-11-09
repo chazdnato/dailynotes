@@ -49,7 +49,7 @@ func Extract(markdown []byte) (*Document, error) {
 
 	var currentSection *Section
 
-	ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
+	err := ast.Walk(doc, func(n ast.Node, entering bool) (ast.WalkStatus, error) {
 		if !entering {
 			return ast.WalkContinue, nil
 		}
@@ -77,6 +77,10 @@ func Extract(markdown []byte) (*Document, error) {
 
 		return ast.WalkContinue, nil
 	})
+
+	if err != nil {
+		return nil, err
+	}
 
 	return result, nil
 }

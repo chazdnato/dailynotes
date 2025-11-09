@@ -17,11 +17,11 @@ const Default = `# {{.Date}}
 
 ## Doing
 
-- [ ] 
+- [ ]
 
 ## Longer Term
 
-- [ ] 
+- [ ]
 `
 
 // Load loads a template from file or returns the default
@@ -44,7 +44,11 @@ func Load(templatePath string) (string, error) {
 func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 	result := strings.ReplaceAll(tmpl, "{{.Date}}", date)
 
-	templateDoc, _ := tasks.Extract([]byte(result))
+	templateDoc, err := tasks.Extract([]byte(result))
+	if err != nil {
+		debug.Printf("Warning: failed to parse template as markdown: %v", err)
+		templateDoc = &tasks.Document{Sections: []tasks.Section{}}
+	}
 
 	tasksBySection := make(map[string][]tasks.Task)
 	for _, section := range taskDoc.Sections {
