@@ -22,7 +22,7 @@ func TestExtract(t *testing.T) {
   - [x] Watch tutorial
 `
 
-	doc, err := Extract([]byte(markdown))
+	doc, err := Extract(markdown)
 	if err != nil {
 		t.Fatalf("Extract failed: %v", err)
 	}
