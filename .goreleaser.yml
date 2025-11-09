@@ -1,0 +1,101 @@
+version: 2
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - id: "dailynotes"
+    binary: "dailynotes"
+    env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+      - arm64
+    ldflags:
+      - -s -w -X '{{.ModulePath}}/cmd.version={{.Summary}}' -X '{{.ModulePath}}/cmd.commit={{.Commit}}' -X '{{.ModulePath}}/cmd.date={{.Date}}'
+
+archives:
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- .Version }}_
+      {{- .Os }}_
+      {{- if eq .Arch "darwin" }}Darwin
+        {{- else if eq .Arch "linux" }}Linux
+        {{- else if eq .Arch "amd64" }}x86_64
+        {{- else }}{{ .Arch }}
+      {{- end }}
+      {{- with .Arm }}v{{ . }}{{ end }}
+      {{- with .Mips }}_{{ . }}{{ end }}
+      {{- if not (eq .Amd64 "v1") }}{{ .Amd64 }}{{ end }}
+
+dockers:
+  - id: docker
+    image_templates:
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:latest"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:{{ .Tag }}"
+
+      # Publish truncated version tags to docker
+      # See https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/renovate-bot.md#truncated-versions
+      # for further information
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}"
+      - "{{ .Env.CI_REGISTRY_IMAGE }}:v{{ .Major }}.{{ .Minor }}"
+
+    goos: linux
+    goarch: amd64
+
+release:
+  gitlab:
+    owner: gitlab-com/gl-infra # GitLab Group
+    name: dailynotes # GitLab Project
+
+checksum:
+  name_template: 'checksums.txt'
+
+changelog:
+  sort: asc
+  use: gitlab
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
+
+gitlab_urls:
+  # Use the Generic Package Registry feature in GitLab
+  # https://docs.gitlab.com/ee/user/packages/package_registry/index.html
+  use_package_registry: true
+  api: "{{ .Env.CI_SERVER_URL }}"
+  download: "{{ .Env.CI_SERVER_URL }}"
+
+docker_signs:
+  - id: keyless_cosign
+    cmd: cosign
+    args:
+      - sign
+      - "${artifact}"
+      - "--yes"
+    artifacts: all
+    ids:
+      - docker
+    output: true
+
+# https://goreleaser.com/customization/sign/
+signs:
+  - id: keyless_cosign
+    cmd: cosign
+    args:
+      - "sign-blob"
+      - "--output-signature=${signature}"
+      - "--bundle=${certificate}"  # We choose to write the bundle in the certificate field
+      - "${artifact}"
+      - "--yes"
+    output: true
+    artifacts: archive
+    signature: '{{ trimsuffix (trimsuffix .Env.artifact ".zip") ".tar.gz" }}.sig'
+    certificate: '{{ trimsuffix (trimsuffix .Env.artifact ".zip") ".tar.gz" }}.bundle' # Actually the bundle, not the certificate
+
+# Publish syft SBOMs
+# https://goreleaser.com/customization/sbom/
+sboms:
+  - artifacts: archive
