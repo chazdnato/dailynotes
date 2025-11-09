@@ -44,11 +44,11 @@ The default format of the template is as follows:
 
 ## Doing
 
-- [ ] 
+- [ ]
 
 ## Longer Term
 
-- [ ] 
+- [ ]
 ```
 
 The import piece is `{{.Date}}` as this is parsed by the program to generate the date stamp. The rest is entirely up to you!
