@@ -21,7 +21,10 @@ include:
     ref: v3.0.0  # renovate:managed
     file: templates/golang.yml
 
-# disable renovate bot for now
+# don't use inherited secrets, i.e. force use of project CI/CD variables
 renovate_bot:
-  rules:
-    - when: never
+  secrets:
+    RENOVATE_GITHUB_TOKEN:
+      vault: ~
+    RENOVATE_GITLAB_TOKEN:
+      vault: ~
