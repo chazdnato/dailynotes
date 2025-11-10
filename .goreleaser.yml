@@ -47,7 +47,7 @@ dockers:
 
 release:
   gitlab:
-    owner: gitlab-com/gl-infra # GitLab Group
+    owner: gitlab-com/gl-infra/gitlab-dedicated/sandbox/cdaminato
     name: dailynotes # GitLab Project
 
 checksum:
