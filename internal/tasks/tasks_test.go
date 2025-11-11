@@ -200,3 +200,69 @@ func TestCountWithCompleted(t *testing.T) {
 		t.Errorf("Expected completed 2, got %d", completed)
 	}
 }
+
+func TestExtractWithLinks(t *testing.T) {
+	markdown, err := os.ReadFile("testdata/links_test.md")
+	if err != nil {
+		t.Fatalf("Failed to read test file: %v", err)
+	}
+
+	doc, err := Extract(markdown)
+	if err != nil {
+		t.Fatalf("Extract failed: %v", err)
+	}
+
+	// Should have 2 sections (H1 + H2)
+	if len(doc.Sections) != 2 {
+		t.Fatalf("Expected 2 sections, got %d", len(doc.Sections))
+	}
+
+	section := doc.Sections[1] // The "Section" H2
+	if len(section.Tasks) != 5 {
+		t.Fatalf("Expected 5 tasks, got %d", len(section.Tasks))
+	}
+
+	// Check first task preserves link
+	expected1 := "Task with [link text](https://example.com/path)"
+	if section.Tasks[0].Content != expected1 {
+		t.Errorf("Expected: %s\nGot: %s", expected1, section.Tasks[0].Content)
+	}
+
+	// Check second task preserves multiple links
+	expected2 := "Task with multiple [link1](https://one.com) and [link2](https://two.com)"
+	if section.Tasks[1].Content != expected2 {
+		t.Errorf("Expected: %s\nGot: %s", expected2, section.Tasks[1].Content)
+	}
+
+	// Check completed task preserves link
+	expected3 := "Completed [task](https://completed.com)"
+	if section.Tasks[2].Content != expected3 {
+		t.Errorf("Expected: %s\nGot: %s", expected3, section.Tasks[2].Content)
+	}
+
+	// Verify it's marked as checked
+	if !section.Tasks[2].Checked {
+		t.Error("Expected third task to be checked")
+	}
+
+	// Check task with backticks and formatting
+	expected4 := "Task with `code in backticks` and **bold** and *italic*"
+	if section.Tasks[3].Content != expected4 {
+		t.Errorf("Expected: %s\nGot: %s", expected4, section.Tasks[3].Content)
+	}
+
+	// Check nested tasks with links and backticks
+	expected5 := "fixing [a-problem](https://exemplar.com/example/12345678910)"
+	if section.Tasks[4].Content != expected5 {
+		t.Errorf("Expected: %s\nGot: %s", expected5, section.Tasks[4].Content)
+	}
+
+	if len(section.Tasks[4].Children) != 2 {
+		t.Fatalf("Expected 2 children for task 5, got %d", len(section.Tasks[4].Children))
+	}
+
+	expectedChild := "once approved, `SOME_BACKTICKED_THING` should exist"
+	if section.Tasks[4].Children[1].Content != expectedChild {
+		t.Errorf("Expected: %s\nGot: %s", expectedChild, section.Tasks[4].Children[1].Content)
+	}
+}

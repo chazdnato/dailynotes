@@ -139,39 +139,70 @@ func extractTasksFromList(list ast.Node, source []byte, indent int) []Task {
 	return tasks
 }
 
-// extractText gets only direct text from a node
+// extractText gets the text content from a list item, preserving inline markdown
 func extractText(node ast.Node, source []byte) string {
 	var buf bytes.Buffer
 
 	for child := node.FirstChild(); child != nil; child = child.NextSibling() {
+		// Skip nested lists - they're handled as children
 		if _, ok := child.(*ast.List); ok {
 			continue
 		}
 
-		if text, ok := child.(*ast.Text); ok {
-			buf.Write(text.Segment.Value(source))
-			continue
-		}
-
-		if tb, ok := child.(*ast.TextBlock); ok {
-			for tbChild := tb.FirstChild(); tbChild != nil; tbChild = tbChild.NextSibling() {
-				if _, ok := tbChild.(*gast.TaskCheckBox); ok {
-					continue
-				}
-				if text, ok := tbChild.(*ast.Text); ok {
-					buf.Write(text.Segment.Value(source))
-				}
-			}
-		} else if para, ok := child.(*ast.Paragraph); ok {
-			for pChild := para.FirstChild(); pChild != nil; pChild = pChild.NextSibling() {
-				if text, ok := pChild.(*ast.Text); ok {
-					buf.Write(text.Segment.Value(source))
-				}
-			}
-		}
+		// Recursively collect text from this child
+		collectText(child, source, &buf)
 	}
 
 	return strings.TrimSpace(buf.String())
+}
+
+// collectText recursively collects formatted text from AST nodes
+func collectText(node ast.Node, source []byte, buf *bytes.Buffer) {
+	switch n := node.(type) {
+	case *gast.TaskCheckBox:
+		// Skip the checkbox itself - we don't want it in the content
+		return
+
+	case *ast.Text:
+		// Plain text - just get the segment
+		buf.Write(n.Segment.Value(source))
+
+	case *ast.CodeSpan:
+		// Code span - add backticks
+		buf.WriteString("`")
+		for child := n.FirstChild(); child != nil; child = child.NextSibling() {
+			collectText(child, source, buf)
+		}
+		buf.WriteString("`")
+
+	case *ast.Emphasis:
+		// Emphasis/strong - add markers
+		marker := "*"
+		if n.Level == 2 {
+			marker = "**"
+		}
+		buf.WriteString(marker)
+		for child := n.FirstChild(); child != nil; child = child.NextSibling() {
+			collectText(child, source, buf)
+		}
+		buf.WriteString(marker)
+
+	case *ast.Link:
+		// Link - reconstruct markdown syntax
+		buf.WriteString("[")
+		for child := n.FirstChild(); child != nil; child = child.NextSibling() {
+			collectText(child, source, buf)
+		}
+		buf.WriteString("](")
+		buf.Write(n.Destination)
+		buf.WriteString(")")
+
+	default:
+		// For any other node, recurse into children
+		for child := node.FirstChild(); child != nil; child = child.NextSibling() {
+			collectText(child, source, buf)
+		}
+	}
 }
 
 // FilterUncompleted returns a new document with only sections that have uncompleted tasks
