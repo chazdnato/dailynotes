@@ -4,7 +4,7 @@
 exclude: '^itests/fixtures/render/yaml_stream_expected.yaml'
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.3.0  # renovate:managed
+    rev: v4.6.0  # renovate:managed
     hooks:
       - id: trailing-whitespace
       - id: end-of-file-fixer
