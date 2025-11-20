@@ -64,9 +64,9 @@ func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 			for _, task := range sectionTasks {
 				output.WriteString(tasks.Format(task, 0) + "\n")
 			}
+			output.WriteString("\n")
 			delete(tasksBySection, section.Title)
 		}
-		output.WriteString("\n")
 	}
 
 	// Add any remaining sections not in template
@@ -75,7 +75,6 @@ func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 		for _, task := range sectionTasks {
 			output.WriteString(tasks.Format(task, 0) + "\n")
 		}
-		output.WriteString("\n")
 	}
 
 	return output.String()
