@@ -20,7 +20,7 @@ repos:
   # Documentation available at
   # https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/docs/pre-commit.md
   - repo: https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks
-    rev: v3.0  # renovate:managed
+    rev: v3.1  # renovate:managed
 
     hooks:
       - id: update-asdf-version-variables  # Update .gitlab-ci-asdf-versions.yml if .tool-versions has changed
