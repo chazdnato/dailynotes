@@ -1,5 +1,5 @@
 module dailynotes
 
-go 1.25.4
+go 1.25.5
 
 require github.com/yuin/goldmark v1.7.13
