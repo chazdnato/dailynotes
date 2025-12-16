@@ -1,5 +1,5 @@
 # .tool-versions
-golang 1.25.4 # datasource=github-releases depName=golang/go
+golang 1.25.5 # datasource=github-releases depName=golang/go
 golangci-lint 2.6 # datasource=github-releases depName=golangci/golangci-lint
 goreleaser 2.13 # datasource=github-releases depName=goreleaser/goreleaser
 pre-commit 4.5.0 # datasource=github-releases depName=pre-commit/pre-commit
