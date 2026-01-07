@@ -77,5 +77,6 @@ func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 		}
 	}
 
-	return output.String()
+	// Remove trailing newlines to ensure file ends with single newline
+	return strings.TrimRight(output.String(), "\n") + "\n"
 }
