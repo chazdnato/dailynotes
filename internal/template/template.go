@@ -58,7 +58,7 @@ func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 	var output strings.Builder
 	for _, section := range templateDoc.Sections {
 		hashes := strings.Repeat("#", section.Level)
-		output.WriteString(fmt.Sprintf("%s %s\n\n", hashes, section.Title))
+		fmt.Fprintf(&output, "%s %s\n\n", hashes, section.Title)
 
 		if sectionTasks, found := tasksBySection[section.Title]; found {
 			for _, task := range sectionTasks {
@@ -71,7 +71,7 @@ func Merge(tmpl string, taskDoc *tasks.Document, date string) string {
 
 	// Add any remaining sections not in template
 	for sectionTitle, sectionTasks := range tasksBySection {
-		output.WriteString(fmt.Sprintf("## %s\n\n", sectionTitle))
+		fmt.Fprintf(&output, "## %s\n\n", sectionTitle)
 		for _, task := range sectionTasks {
 			output.WriteString(tasks.Format(task, 0) + "\n")
 		}
