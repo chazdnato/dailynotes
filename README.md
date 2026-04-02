@@ -40,7 +40,7 @@ The default format of the template is as follows:
 
 ## Useful Links
 
-## Read, Attend or Watch
+## Read, Attend, or Watch
 
 ## Doing
 

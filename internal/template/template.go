@@ -13,7 +13,7 @@ const Default = `# {{.Date}}
 
 ## Useful Links
 
-## Read, Attend or Watch
+## Read, Attend, or Watch
 
 ## Doing
 
