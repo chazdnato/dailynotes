@@ -12,13 +12,13 @@ include:
   # common to all projects using this template library.
   # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/README.md#templatesstandardyml
   - project: 'gitlab-com/gl-infra/common-ci-tasks'
-    ref: v3.14  # renovate:managed
+    ref: v3.15  # renovate:managed
     file: templates/standard.yml
 
   # Runs golang standard tests, including tests, goreleaser, golangci-lint and go-mod-tidy
   # see https://gitlab.com/gitlab-com/gl-infra/common-ci-tasks/-/blob/main/templates/golang.md
   - project: 'gitlab-com/gl-infra/common-ci-tasks'
-    ref: v3.14  # renovate:managed
+    ref: v3.15  # renovate:managed
     file: templates/golang.yml
 
 # Override .renovate_bot_auth_config to use CI/CD variables instead of Vault.
