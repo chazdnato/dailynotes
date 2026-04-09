@@ -21,10 +21,15 @@ include:
     ref: v3.14  # renovate:managed
     file: templates/golang.yml
 
-# don't use inherited secrets, i.e. force use of project CI/CD variables
+# Override .renovate_bot_auth_config to use CI/CD variables instead of Vault.
+# VAULT_RENOVATE_GITLAB_TOKEN_PATH is inherited but Vault is not available in
+# this project. Both tokens are provided as inherited CI/CD variables.
+#.renovate_bot_auth_config:
+#  variables:
+#    RENOVATE_BOT_AUTH_SOURCE: "CI/CD Variables"
+
 renovate_bot:
-  secrets:
-    RENOVATE_GITHUB_TOKEN:
-      vault: ~
-    RENOVATE_GITLAB_TOKEN:
-      vault: ~
+  extends:
+  - ".base_renovate_bot"
+  variables:
+    RENOVATE_BOT_AUTH_SOURCE: "CI/CD Variables"
