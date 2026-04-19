@@ -171,40 +171,11 @@ func createDailyNote() error {
 }
 
 // runArchive performs the archive pass against *dirFlag, honoring *dryRunFlag.
-// If silent is true, only errors and non-empty skip reports are printed; a
-// successful no-op run is silent. Returns the result and any error.
+// It delegates to files.ArchiveCmd for the core logic (see that function for
+// parameter semantics). This wrapper exists to bridge package-level CLI flag
+// globals to the testable function signature.
 func runArchive(silent bool) error {
-	result, err := files.Archive(*dirFlag, time.Now(), *dryRunFlag)
-	if err != nil {
-		return err
-	}
-
-	if *dryRunFlag {
-		if len(result.Moved) == 0 && len(result.Skipped) == 0 {
-			fmt.Println("Archive dry-run: nothing to move.")
-			return nil
-		}
-		fmt.Printf("Archive dry-run: would move %d file(s)\n", len(result.Moved))
-		for _, f := range result.Moved {
-			fmt.Printf("  %s -> %s/%s/%s\n", f, f[0:4], f[5:7], f)
-		}
-		for _, s := range result.Skipped {
-			fmt.Printf("  skip %s (%s)\n", s.Source, s.Reason)
-		}
-		return nil
-	}
-
-	if len(result.Moved) > 0 {
-		fmt.Printf("Archived %d file(s) into YYYY/MM/ subdirectories\n", len(result.Moved))
-	}
-	for _, s := range result.Skipped {
-		fmt.Fprintf(os.Stderr, "Warning: skipped %s (%s)\n", s.Source, s.Reason)
-	}
-	if silent && len(result.Moved) == 0 && len(result.Skipped) == 0 {
-		// Silent no-op.
-		return nil
-	}
-	return nil
+	return files.ArchiveCmd(*dirFlag, time.Now(), *dryRunFlag, silent, os.Stdout, os.Stderr)
 }
 
 func main() {

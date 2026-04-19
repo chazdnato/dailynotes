@@ -255,3 +255,171 @@ func TestArchiveAlreadyArchivedNotReArchived(t *testing.T) {
 	mustExist(t, root, "2026/03/2026-03-15.md")
 	mustExist(t, root, "2025/11/2025-11-10.md")
 }
+
+// Tests for ArchiveCmd - the CLI wrapper.
+
+func TestArchiveCmdDryRunSilentNoOp(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	var stdout, stderr strings.Builder
+
+	if err := ArchiveCmd(root, now, true, true, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	// Silent + dry-run + nothing to move = no output
+	if stdout.String() != "" {
+		t.Errorf("expected silent stdout, got: %q", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Errorf("expected silent stderr, got: %q", stderr.String())
+	}
+}
+
+func TestArchiveCmdDryRunVerboseNoOp(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	var stdout, stderr strings.Builder
+
+	// silent=false + dry-run + nothing to move = "nothing to move" line
+	if err := ArchiveCmd(root, now, true, false, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	if !strings.Contains(stdout.String(), "nothing to move") {
+		t.Errorf("expected 'nothing to move' in stdout, got: %q", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Errorf("expected silent stderr, got: %q", stderr.String())
+	}
+}
+
+func TestArchiveCmdDryRunWithMoves(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	mustWriteFile(t, root, "2026-03-15.md", "")
+	mustWriteFile(t, root, "2025-12-01.md", "")
+
+	var stdout, stderr strings.Builder
+	if err := ArchiveCmd(root, now, true, false, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "would move 2 file(s)") {
+		t.Errorf("expected 'would move 2 file(s)' in stdout, got: %q", out)
+	}
+	if !strings.Contains(out, "2026-03-15.md -> 2026/03/2026-03-15.md") {
+		t.Errorf("expected move detail for 2026-03-15.md, got: %q", out)
+	}
+	if !strings.Contains(out, "2025-12-01.md -> 2025/12/2025-12-01.md") {
+		t.Errorf("expected move detail for 2025-12-01.md, got: %q", out)
+	}
+
+	// Nothing actually moved
+	mustExist(t, root, "2026-03-15.md")
+	mustExist(t, root, "2025-12-01.md")
+}
+
+func TestArchiveCmdRealMovesReportedToStdout(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	mustWriteFile(t, root, "2026-03-15.md", "a")
+	mustWriteFile(t, root, "2026-03-16.md", "b")
+	mustWriteFile(t, root, "2026-04-01.md", "current") // stays
+
+	var stdout, stderr strings.Builder
+	if err := ArchiveCmd(root, now, false, false, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	out := stdout.String()
+	if !strings.Contains(out, "Archived 2 file(s)") {
+		t.Errorf("expected 'Archived 2 file(s)' in stdout, got: %q", out)
+	}
+	if stderr.String() != "" {
+		t.Errorf("expected silent stderr, got: %q", stderr.String())
+	}
+
+	// Files actually moved
+	mustExist(t, root, "2026/03/2026-03-15.md")
+	mustExist(t, root, "2026/03/2026-03-16.md")
+	mustExist(t, root, "2026-04-01.md")
+}
+
+func TestArchiveCmdSilentRealNoOp(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	mustWriteFile(t, root, "2026-04-01.md", "current") // stays
+
+	var stdout, stderr strings.Builder
+	// silent=true, no moves: expect zero output
+	if err := ArchiveCmd(root, now, false, true, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	if stdout.String() != "" {
+		t.Errorf("expected silent stdout, got: %q", stdout.String())
+	}
+	if stderr.String() != "" {
+		t.Errorf("expected silent stderr, got: %q", stderr.String())
+	}
+}
+
+func TestArchiveCmdCollisionWarnsToStderr(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	mustWriteFile(t, root, "2026-03-15.md", "source")
+	mustWriteFile(t, root, "2026/03/2026-03-15.md", "existing")
+
+	var stdout, stderr strings.Builder
+	if err := ArchiveCmd(root, now, false, false, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	// No "Archived N" line (nothing was moved)
+	if strings.Contains(stdout.String(), "Archived") {
+		t.Errorf("expected no 'Archived' line in stdout, got: %q", stdout.String())
+	}
+	// Warning goes to stderr
+	errOut := stderr.String()
+	if !strings.Contains(errOut, "Warning: skipped 2026-03-15.md") {
+		t.Errorf("expected skip warning in stderr, got: %q", errOut)
+	}
+	if !strings.Contains(errOut, "destination") {
+		t.Errorf("expected 'destination' reason in stderr warning, got: %q", errOut)
+	}
+}
+
+func TestArchiveCmdCollisionInDryRunListed(t *testing.T) {
+	root := t.TempDir()
+	now := time.Date(2026, 4, 19, 12, 0, 0, 0, time.UTC)
+	mustWriteFile(t, root, "2026-03-15.md", "source")
+	mustWriteFile(t, root, "2026/03/2026-03-15.md", "existing")
+
+	var stdout, stderr strings.Builder
+	if err := ArchiveCmd(root, now, true, false, &stdout, &stderr); err != nil {
+		t.Fatalf("ArchiveCmd failed: %v", err)
+	}
+
+	// In dry-run, skips are listed in stdout (not stderr)
+	out := stdout.String()
+	if !strings.Contains(out, "skip 2026-03-15.md") {
+		t.Errorf("expected 'skip 2026-03-15.md' in dry-run stdout, got: %q", out)
+	}
+	// Stderr should be empty in dry-run mode
+	if stderr.String() != "" {
+		t.Errorf("expected silent stderr in dry-run, got: %q", stderr.String())
+	}
+}
+
+func TestArchiveCmdBubblesErrorFromArchive(t *testing.T) {
+	var stdout, stderr strings.Builder
+	err := ArchiveCmd("/nonexistent/path/here", time.Now(), false, false, &stdout, &stderr)
+	if err == nil {
+		t.Fatal("expected error for nonexistent path")
+	}
+	if !strings.Contains(err.Error(), "does not exist") {
+		t.Errorf("expected 'does not exist' error, got: %v", err)
+	}
+}
