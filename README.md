@@ -24,12 +24,30 @@ Basic usage is just to run the script. However, there are several ways to modify
 Usage of ./dailynotes:
   --debug - Enable debug output
   --dir string - Directory containing daily note files (default ".")
-  --dry-run - Show what would be created without writing files
+  --dry-run - Show what would be created or archived without writing/moving files
   --force - Overwrite existing file without prompting (default: ask)
   --list - List all daily note files in the directory, with some task stats
+  --no-archive - Skip the automatic archive step on the main invocation
   --template string - Path to template file (uses default if not specified)
 
+Subcommands:
+  archive - Archive prior-month notes into YYYY/MM/ subdirectories.
+            The subcommand must be the first argument, e.g.:
+              dailynotes archive
+              dailynotes archive -dry-run
+              dailynotes archive -dir ~/notes
+
 ```
+
+### Archive behavior
+
+As months roll over, the utility automatically moves prior-month `YYYY-MM-DD.md`
+files into `YYYY/MM/` subdirectories on each invocation. Current-month files stay
+at the root, and the operation is idempotent.
+
+Pass `--no-archive` to skip the automatic step, or run `dailynotes archive` as
+a standalone subcommand. Collisions (a file already at the destination) are
+reported and the source is left in place.
 
 ### Template format
 
