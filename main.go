@@ -17,12 +17,13 @@ import (
 
 // CLI flags
 var (
-	debugFlag    = flag.Bool("debug", false, "Enable debug output")
-	dirFlag      = flag.String("dir", ".", "Directory containing daily note files")
-	dryRunFlag   = flag.Bool("dry-run", false, "Show what would be created without writing files")
-	forceFlag    = flag.Bool("force", false, "Overwrite existing file without prompting")
-	listFlag     = flag.Bool("list", false, "List all daily note files in the directory")
-	templateFlag = flag.String("template", "", "Path to template file (uses default if not specified)")
+	debugFlag     = flag.Bool("debug", false, "Enable debug output")
+	dirFlag       = flag.String("dir", ".", "Directory containing daily note files")
+	dryRunFlag    = flag.Bool("dry-run", false, "Show what would be created or archived without writing/moving files")
+	forceFlag     = flag.Bool("force", false, "Overwrite existing file without prompting")
+	listFlag      = flag.Bool("list", false, "List all daily note files in the directory")
+	templateFlag  = flag.String("template", "", "Path to template file (uses default if not specified)")
+	noArchiveFlag = flag.Bool("no-archive", false, "Skip the automatic archive step on the main invocation")
 )
 
 // promptYesNo asks the user a yes/no question and returns true for yes
@@ -169,11 +170,52 @@ func createDailyNote() error {
 	return nil
 }
 
+// runArchive performs the archive pass against *dirFlag, honoring *dryRunFlag.
+// It delegates to files.ArchiveCmd for the core logic (see that function for
+// parameter semantics). This wrapper exists to bridge package-level CLI flag
+// globals to the testable function signature.
+func runArchive(silent bool) error {
+	return files.ArchiveCmd(*dirFlag, time.Now(), *dryRunFlag, silent, os.Stdout, os.Stderr)
+}
+
 func main() {
+	// Detect a subcommand before flag parsing, so flags after the subcommand
+	// are still handled by the standard flag package.
+	//
+	// Subcommands: "archive" (standalone archive run).
+	var subcommand string
+	if len(os.Args) > 1 && !strings.HasPrefix(os.Args[1], "-") {
+		subcommand = os.Args[1]
+		os.Args = append([]string{os.Args[0]}, os.Args[2:]...)
+	}
+
 	flag.Parse()
+
+	// Reject unknown leftover positional arguments. A subcommand MUST be the
+	// first argument after the binary name; flags cannot precede it.
+	if remaining := flag.Args(); len(remaining) > 0 {
+		fmt.Fprintf(os.Stderr, "Error: unexpected argument(s): %v\n", remaining)
+		fmt.Fprintln(os.Stderr, "Subcommands must be the first argument (e.g. 'dailynotes archive -dry-run').")
+		os.Exit(1)
+	}
 
 	if *debugFlag {
 		debug.Enabled = true
+	}
+
+	switch subcommand {
+	case "":
+		// No subcommand: default workflow.
+	case "archive":
+		if err := runArchive(false); err != nil {
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
+			os.Exit(1)
+		}
+		return
+	default:
+		fmt.Fprintf(os.Stderr, "Error: unknown subcommand %q\n", subcommand)
+		fmt.Fprintln(os.Stderr, "Available subcommands: archive")
+		os.Exit(1)
 	}
 
 	if *listFlag {
@@ -183,6 +225,17 @@ func main() {
 			os.Exit(1)
 		}
 		return
+	}
+
+	// On the default workflow (creating today's note), run a silent archive
+	// pass first unless --no-archive was passed. This is idempotent and keeps
+	// the root directory tidy as months roll over.
+	if !*noArchiveFlag {
+		if err := runArchive(true); err != nil {
+			// Non-fatal: warn and continue. We don't want archive failures
+			// to block creating today's note.
+			fmt.Fprintf(os.Stderr, "Warning: archive pass failed: %v\n", err)
+		}
 	}
 
 	err := createDailyNote()
