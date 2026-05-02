@@ -2,4 +2,4 @@
 golang 1.26.2 # datasource=golang-version depName=golang/go
 golangci-lint 2.11 # datasource=github-releases depName=golangci/golangci-lint
 goreleaser 2.15 # datasource=github-releases depName=goreleaser/goreleaser
-pre-commit 4.5.1 # datasource=github-releases depName=pre-commit/pre-commit
+pre-commit 4.6.0 # datasource=github-releases depName=pre-commit/pre-commit
