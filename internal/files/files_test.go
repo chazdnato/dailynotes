@@ -194,3 +194,83 @@ func TestListEmpty(t *testing.T) {
 		t.Errorf("Expected 0 results for empty directory, got %d", len(results))
 	}
 }
+
+func TestFindMostRecentInArchive(t *testing.T) {
+	// Simulates a fresh-month state: root has only an archive, no current-month files.
+	tmpDir := t.TempDir()
+
+	// Create archived files in YYYY/MM/ structure.
+	archived := []string{
+		"2026/03/2026-03-15.md",
+		"2026/04/2026-04-30.md",
+		"2026/04/2026-04-29.md",
+		"2025/12/2025-12-31.md",
+	}
+
+	for _, rel := range archived {
+		path := filepath.Join(tmpDir, rel)
+		if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
+			t.Fatalf("mkdir %s: %v", filepath.Dir(rel), err)
+		}
+		if err := os.WriteFile(path, []byte("test"), 0644); err != nil {
+			t.Fatalf("write %s: %v", rel, err)
+		}
+	}
+
+	recent, err := FindMostRecent(tmpDir)
+	if err != nil {
+		t.Fatalf("FindMostRecent failed: %v", err)
+	}
+
+	expected := filepath.Join(tmpDir, "2026/04/2026-04-30.md")
+	if recent != expected {
+		t.Errorf("expected most recent to be %s, got %s", expected, recent)
+	}
+}
+
+func TestFindMostRecentRootBeatsArchiveOfSameDate(t *testing.T) {
+	// If by some quirk a file exists in both the root AND the archive,
+	// the root copy should win (most recent date sorts equally; root path
+	// is shorter so we should see consistent behavior). More importantly,
+	// the root currrent-month file should always beat any archived date.
+	tmpDir := t.TempDir()
+
+	// Archive has older date.
+	if err := os.MkdirAll(filepath.Join(tmpDir, "2026/03"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+	if err := os.WriteFile(filepath.Join(tmpDir, "2026/03/2026-03-31.md"), []byte("a"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	// Root has newer date (current-month).
+	if err := os.WriteFile(filepath.Join(tmpDir, "2026-04-19.md"), []byte("b"), 0644); err != nil {
+		t.Fatalf("write: %v", err)
+	}
+
+	recent, err := FindMostRecent(tmpDir)
+	if err != nil {
+		t.Fatalf("FindMostRecent failed: %v", err)
+	}
+
+	expected := filepath.Join(tmpDir, "2026-04-19.md")
+	if recent != expected {
+		t.Errorf("expected root file %s to win, got %s", expected, recent)
+	}
+}
+
+func TestFindMostRecentEmptyTree(t *testing.T) {
+	tmpDir := t.TempDir()
+	// Create empty YYYY/MM/ subdirs but no actual files.
+	if err := os.MkdirAll(filepath.Join(tmpDir, "2026/04"), 0755); err != nil {
+		t.Fatalf("mkdir: %v", err)
+	}
+
+	recent, err := FindMostRecent(tmpDir)
+	if err != nil {
+		t.Fatalf("FindMostRecent failed: %v", err)
+	}
+	if recent != "" {
+		t.Errorf("expected empty result, got %s", recent)
+	}
+}

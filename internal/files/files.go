@@ -15,10 +15,12 @@ import (
 
 var dateFilePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.md$`)
 
-// FindMostRecent finds the most recent YYYY-MM-DD.md file in the given directory
+// FindMostRecent finds the most recent YYYY-MM-DD.md file in dir, searching
+// both the flat root (current-month files) and any YYYY/MM/ archive
+// subdirectories produced by Archive(). The returned path is relative to
+// the working directory, matching the path used to find it.
 func FindMostRecent(dir string) (string, error) {
-	entries, err := os.ReadDir(dir)
-	if err != nil {
+	if _, err := os.Stat(dir); err != nil {
 		if os.IsNotExist(err) {
 			return "", fmt.Errorf("directory does not exist: %s", dir)
 		}
@@ -28,21 +30,55 @@ func FindMostRecent(dir string) (string, error) {
 		return "", fmt.Errorf("error reading directory %s: %w", dir, err)
 	}
 
-	var dateFiles []string
-	for _, entry := range entries {
-		if !entry.IsDir() && dateFilePattern.MatchString(entry.Name()) {
-			dateFiles = append(dateFiles, entry.Name())
+	type candidate struct {
+		filename string // bare filename, used for date sorting
+		fullPath string // full path to the file on disk
+	}
+	var candidates []candidate
+
+	// Walk the directory tree; collect any YYYY-MM-DD.md files at any depth.
+	// We bound the walk to depth 2 (root and one subdir level for YYYY/MM/)
+	// so we don't accidentally pick up unrelated nested files.
+	err := filepath.WalkDir(dir, func(path string, d os.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
 		}
+		if d.IsDir() {
+			// Limit walk depth to dir + YYYY/MM/.
+			rel, err := filepath.Rel(dir, path)
+			if err != nil {
+				return err
+			}
+			if rel == "." {
+				return nil
+			}
+			depth := len(strings.Split(rel, string(os.PathSeparator)))
+			if depth >= 3 {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if dateFilePattern.MatchString(d.Name()) {
+			candidates = append(candidates, candidate{filename: d.Name(), fullPath: path})
+		}
+		return nil
+	})
+	if err != nil {
+		return "", fmt.Errorf("error walking directory %s: %w", dir, err)
 	}
 
-	if len(dateFiles) == 0 {
+	if len(candidates) == 0 {
 		return "", nil
 	}
 
-	sort.Sort(sort.Reverse(sort.StringSlice(dateFiles)))
+	// Sort by filename descending (lexicographic equals chronological for
+	// YYYY-MM-DD format), so the most recent date is first.
+	sort.Slice(candidates, func(i, j int) bool {
+		return candidates[i].filename > candidates[j].filename
+	})
 
-	debug.Printf("Found %d date files, most recent: %s", len(dateFiles), dateFiles[0])
-	return filepath.Join(dir, dateFiles[0]), nil
+	debug.Printf("Found %d date files across root and archives, most recent: %s", len(candidates), candidates[0].fullPath)
+	return candidates[0].fullPath, nil
 }
 
 // TodayFilename returns today's filename in YYYY-MM-DD.md format
