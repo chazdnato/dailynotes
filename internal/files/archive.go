@@ -8,7 +8,7 @@ import (
 	"sort"
 	"time"
 
-	"dailynotes/internal/debug"
+	"github.com/chazdnato/dailynotes/internal/debug"
 )
 
 // ArchiveResult describes the outcome of an Archive run.

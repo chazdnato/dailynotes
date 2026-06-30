@@ -1,4 +1,4 @@
-module dailynotes
+module github.com/chazdnato/dailynotes
 
 go 1.26.2
 

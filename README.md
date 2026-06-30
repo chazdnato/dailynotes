@@ -73,18 +73,25 @@ The import piece is `{{.Date}}` as this is parsed by the program to generate the
 
 ## Development Setup
 
-This project uses [mise](https://mise.jdx.dev/) for tool version management. Or just have the right `golang` installed.
+Prerequisites (install via Homebrew):
 
 ```bash
-# Install mise
-curl https://mise.run | sh
+brew install go golangci-lint
+```
 
-# Install project tools
-./scripts/prepare-dev-env.sh
-
+```bash
 # Build
 go build -o dailynotes
 
 # Run tests
 go test ./...
+
+# Lint
+golangci-lint run
 ```
+
+## TODO / Aspirational
+
+- [ ] Releases: goreleaser cross-platform binaries on tag → GitHub Releases
+- [ ] Docker: multi-arch image push to ghcr.io
+- [ ] Signing: cosign keyless signing of archives + image

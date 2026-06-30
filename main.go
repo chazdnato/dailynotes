@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	"dailynotes/internal/debug"
-	"dailynotes/internal/files"
-	"dailynotes/internal/tasks"
-	"dailynotes/internal/template"
+	"github.com/chazdnato/dailynotes/internal/debug"
+	"github.com/chazdnato/dailynotes/internal/files"
+	"github.com/chazdnato/dailynotes/internal/tasks"
+	"github.com/chazdnato/dailynotes/internal/template"
 )
 
 // CLI flags
