@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"dailynotes/internal/debug"
+	"github.com/chazdnato/dailynotes/internal/debug"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/ast"

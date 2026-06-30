@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	"dailynotes/internal/debug"
-	"dailynotes/internal/tasks"
+	"github.com/chazdnato/dailynotes/internal/debug"
+	"github.com/chazdnato/dailynotes/internal/tasks"
 )
 
 var dateFilePattern = regexp.MustCompile(`^\d{4}-\d{2}-\d{2}\.md$`)

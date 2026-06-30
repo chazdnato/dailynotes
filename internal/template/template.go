@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"dailynotes/internal/debug"
-	"dailynotes/internal/files"
-	"dailynotes/internal/tasks"
+	"github.com/chazdnato/dailynotes/internal/debug"
+	"github.com/chazdnato/dailynotes/internal/files"
+	"github.com/chazdnato/dailynotes/internal/tasks"
 )
 
 const Default = `# {{.Date}}

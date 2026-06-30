@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"dailynotes/internal/tasks"
+	"github.com/chazdnato/dailynotes/internal/tasks"
 )
 
 func TestLoad(t *testing.T) {
